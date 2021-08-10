@@ -50,23 +50,5 @@
             <version>1.7.32</version>
             <scope>test</scope>
         </dependency>
-<!--        Fix #0 - set netty version explicitly-->
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>4.1.63.Final</version>
-        </dependency>
-        <dependency>
-            <groupId>com.browserup</groupId>
-            <artifactId>browserup-proxy-core</artifactId>
-            <version>2.1.2</version>
-<!--        Fix #1 - exclude old selenium from deps-->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.seleniumhq.selenium</groupId>
-                    <artifactId>selenium-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
     </dependencies>
 </project>
