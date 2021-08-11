@@ -50,5 +50,10 @@
             <version>1.7.32</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.1.0</version>
+        </dependency>
     </dependencies>
 </project>

@@ -13,6 +13,11 @@ import org.openqa.selenium.devtools.DevTools;
 import org.openqa.selenium.devtools.noop.NoOpCdpInfo;
 import org.openqa.selenium.devtools.v91.fetch.Fetch;
 import org.openqa.selenium.devtools.v91.fetch.model.HeaderEntry;
+import org.openqa.selenium.devtools.v91.network.Network;
+import org.openqa.selenium.devtools.v91.network.model.AuthChallengeResponse;
+import org.openqa.selenium.devtools.v91.network.model.Request;
+import org.openqa.selenium.devtools.v91.network.model.RequestId;
+import org.openqa.selenium.devtools.v91.network.model.RequestWillBeSent;
 import org.openqa.selenium.devtools.v91.performance.Performance;
 import org.openqa.selenium.devtools.v91.performance.model.Metric;
 import org.openqa.selenium.remote.RemoteWebDriver;
@@ -26,9 +31,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.Optional.empty;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 
 import static com.codeborne.selenide.Condition.attribute;
@@ -47,8 +56,40 @@ public class MainPageTest {
         open("https://www.jetbrains.com/");
         List<Metric> send = devTools.send(Performance.getMetrics());
         assertTrue(send.size() > 0);
-        send.forEach( it -> System.out.printf("%s: %s%n", it.getName(), it.getValue()));
+        send.forEach(it -> System.out.printf("%s: %s%n", it.getName(), it.getValue()));
     }
+
+    @Test
+    public void getResponseTest() {
+        DevTools devTools = getLocalDevTools();
+        devTools.send(Network.enable(empty(), empty(), empty()));
+
+        final List<RequestWillBeSent> requests = new ArrayList<>();
+        final List<String> responses = new ArrayList<>();
+        devTools.addListener(Network.requestWillBeSent(), req -> {
+            if (req.getRequest().getUrl().contains("proxy/services/credit-application/async/api/external/v1/request/parameters")) {
+                requests.add(req);
+            }
+        });
+
+        devTools.addListener(Network.responseReceived(),
+                entry -> {
+                    if (requests.size() == 0) {
+                        return;
+                    }
+                    RequestWillBeSent request = requests.get(0);
+                    if (request != null && entry.getRequestId().toString().equals(request.getRequestId().toString())) {
+                        Network.GetResponseBodyResponse send = devTools.send(Network.getResponseBody(request.getRequestId()));
+                        responses.add(send.getBody());
+                    }
+                });
+        await().pollThread(Thread::new)
+                .atMost(10, TimeUnit.SECONDS)
+                .until(() -> responses.size() < 1);
+        open("https://www.sberbank.ru/ru/person/credits/money/consumer_unsecured/zayavka");
+        System.out.println(responses.get(0));
+    }
+
 
     @Test
     public void interceptRequestTest() {
@@ -84,7 +125,7 @@ public class MainPageTest {
         $$("#todo-list label").shouldHave(CollectionCondition.texts("Todo 1", "Todo 2"));
     }
 
-    private String getUrl(String url){
+    private String getUrl(String url) {
         try {
             return new URL(url).getQuery();
         } catch (MalformedURLException e) {
