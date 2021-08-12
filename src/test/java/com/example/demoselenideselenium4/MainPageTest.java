@@ -83,10 +83,11 @@ public class MainPageTest {
                         responses.add(send.getBody());
                     }
                 });
+        open("https://www.sberbank.ru/ru/person/credits/money/consumer_unsecured/zayavka");
         await().pollThread(Thread::new)
                 .atMost(10, TimeUnit.SECONDS)
-                .until(() -> responses.size() < 1);
-        open("https://www.sberbank.ru/ru/person/credits/money/consumer_unsecured/zayavka");
+                .until(() -> responses.size() == 1);
+
         System.out.println(responses.get(0));
     }
 
